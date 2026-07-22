@@ -1,15 +1,18 @@
-"""Shared pytest fixtures for database integration tests."""
+"""Shared pytest fixtures for database and API integration tests."""
 
 import os
 import uuid
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.database import Base
+from app.database import Base, get_db
+from app.models.calculation import Calculation  # noqa: F401
 from app.models.user import User
-from app.models.calculation import Calculation
+from app.security import hash_password
+from main import app
 
 
 TEST_DATABASE_URL = os.getenv(
@@ -34,12 +37,15 @@ def engine():
 
 @pytest.fixture()
 def db_session(engine):
-    """Provide a clean database session for each test."""
+    """Provide an isolated database session for each test."""
+
+    connection = engine.connect()
+    transaction = connection.begin()
 
     testing_session = sessionmaker(
         autocommit=False,
         autoflush=False,
-        bind=engine,
+        bind=connection,
     )
 
     session = testing_session()
@@ -47,8 +53,27 @@ def db_session(engine):
     try:
         yield session
     finally:
-        session.rollback()
         session.close()
+        transaction.rollback()
+        connection.close()
+
+
+@pytest.fixture()
+def client(db_session):
+    """Provide a FastAPI test client using the test database session."""
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture()
@@ -60,13 +85,11 @@ def test_user(db_session):
     user = User(
         email=f"test-{unique_value}@example.com",
         username=f"testuser-{unique_value}",
+        password_hash=hash_password("SecurePassword123"),
     )
 
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
 
-    yield user
-
-    db_session.delete(user)
-    db_session.commit()
+    return user
