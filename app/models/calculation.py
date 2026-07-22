@@ -1,4 +1,6 @@
-"""SQLAlchemy model for arithmetic calculations."""
+"""
+SQLAlchemy model for arithmetic calculations.
+"""
 
 import uuid
 
@@ -10,7 +12,9 @@ from app.database import Base
 
 
 class Calculation(Base):
-    """Store an arithmetic calculation in the database."""
+    """
+    Store an arithmetic calculation in the database.
+    """
 
     __tablename__ = "calculations"
 
@@ -22,7 +26,10 @@ class Calculation(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
@@ -55,6 +62,10 @@ class Calculation(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<Calculation(id={self.id}, type={self.type}, "
-            f"a={self.a}, b={self.b}, result={self.result})>"
+            f"<Calculation("
+            f"id={self.id}, "
+            f"type={self.type}, "
+            f"a={self.a}, "
+            f"b={self.b}, "
+            f"result={self.result})>"
         )

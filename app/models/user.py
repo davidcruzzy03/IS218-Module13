@@ -1,79 +1,77 @@
-# app/models/user.py
 """
 User Model
 
-This module defines the User model which represents users in the system.
-Each user can have multiple calculations associated with them.
+This module defines the User model that represents users in the system.
+Each user can own multiple calculations.
 """
 
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, DateTime
+
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 
 class User(Base):
     """
-    User model representing a user in the system.
-    
-    A user can create and own multiple calculations. This model uses UUID
-    for the primary key to ensure uniqueness across distributed systems.
-    
-    Attributes:
-        id: Unique identifier for the user (UUID)
-        username: Unique username for the user
-        email: User's email address
-        created_at: Timestamp when the user was created
-        updated_at: Timestamp when the user was last updated
-        calculations: Relationship to all calculations owned by this user
+    Represents a registered user.
+
+    Each user has a unique username and email address. Passwords are stored
+    as secure hashes rather than plain-text values.
     """
-    __tablename__ = 'users'
+
+    __tablename__ = "users"
 
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        nullable=False
+        nullable=False,
     )
 
     username = Column(
         String(50),
         unique=True,
         nullable=False,
-        index=True
+        index=True,
     )
 
     email = Column(
         String(100),
         unique=True,
         nullable=False,
-        index=True
+        index=True,
+    )
+
+    password_hash = Column(
+        String(255),
+        nullable=False,
     )
 
     created_at = Column(
         DateTime,
         default=datetime.utcnow,
-        nullable=False
+        nullable=False,
     )
 
     updated_at = Column(
         DateTime,
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
-        nullable=False
+        nullable=False,
     )
 
-    # Relationship to calculations
-    # back_populates creates a bidirectional relationship
-    # cascade="all, delete-orphan" ensures calculations are deleted
-    # when user is deleted
     calculations = relationship(
         "Calculation",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
-    def __repr__(self):
-        return f"<User(username={self.username}, email={self.email})>"
+    def __repr__(self) -> str:
+        return (
+            f"<User(username={self.username}, "
+            f"email={self.email})>"
+        )

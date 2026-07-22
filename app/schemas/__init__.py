@@ -11,9 +11,19 @@ from app.schemas.calculation import (
     CalculationRead,
     CalculationType,
 )
+from app.schemas.user import (
+    LoginResponse,
+    UserCreate,
+    UserLogin,
+    UserRead,
+)
 
 __all__ = [
     "CalculationCreate",
     "CalculationRead",
     "CalculationType",
+    "LoginResponse",
+    "UserCreate",
+    "UserLogin",
+    "UserRead",
 ]
