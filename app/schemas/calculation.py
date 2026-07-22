@@ -35,6 +35,26 @@ class CalculationCreate(BaseModel):
         return self
 
 
+class CalculationUpdate(BaseModel):
+    """Validate data used to update a calculation."""
+
+    a: float
+    b: float
+    type: CalculationType
+
+    @model_validator(mode="after")
+    def validate_operands(self) -> "CalculationUpdate":
+        """Reject division when the second operand is zero."""
+
+        if (
+            self.type == CalculationType.DIVIDE
+            and self.b == 0
+        ):
+            raise ValueError("Cannot divide by zero.")
+
+        return self
+
+
 class CalculationRead(BaseModel):
     """Serialize a saved calculation."""
 
