@@ -1,23 +1,21 @@
 services:
-  # Service: web
   web:
     build: .
     container_name: fastapi_calculator
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     environment:
-      PYTHONDONTWRITEBYTECODE: 1
-      PYTHONUNBUFFERED: 1
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/fastapi_db
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/calculator_db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - app-network
 
-  # Service: db (PostgreSQL)
   db:
     image: postgres:16
     container_name: postgres_db
@@ -30,35 +28,38 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d calculator_db"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d calculator_db"
+        ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
     networks:
       - app-network
 
-  # Service: pgadmin
   pgadmin:
-    image: dpage/pgadmin4  # Updated to a newer version
+    image: dpage/pgadmin4
     container_name: pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "5050:80"  # Ensure port 5050 is free or change if necessary
+      - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - app-network
 
 volumes:
   postgres_data:
-    driver: local
   pgadmin_data:
-    driver: local
 
 networks:
   app-network:

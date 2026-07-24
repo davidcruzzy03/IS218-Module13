@@ -3,12 +3,12 @@
 import logging
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-from app.database import Base, engine
 from app.operations import add, divide, multiply, subtract
 from app.routers.calculations import router as calculations_router
 from app.routers.users import router as users_router
@@ -20,10 +20,6 @@ from app.models.user import User  # noqa: F401
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-# Create database tables that do not already exist.
-Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(
@@ -91,6 +87,38 @@ async def http_exception_handler(
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.detail},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    """Return HTTP 400 specifically for division-by-zero validation."""
+
+    logger.error(
+        "Validation error on %s: %s",
+        request.url.path,
+        exc.errors(),
+    )
+
+    errors = exc.errors()
+
+    division_by_zero = any(
+        "divide by zero" in str(error.get("msg", "")).lower()
+        for error in errors
+    )
+
+    if division_by_zero:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "Cannot divide by zero."},
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": errors},
     )
 
 

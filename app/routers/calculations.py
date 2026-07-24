@@ -64,18 +64,17 @@ def read_calculation(
     status_code=status.HTTP_201_CREATED,
 )
 def add_calculation(
-    user_id: UUID,
     calculation_data: CalculationCreate,
     db: Session = Depends(get_db),
 ) -> Calculation:
-    """Create and save a new calculation for a user."""
+    """Create and save a new calculation."""
 
-    user = db.get(User, user_id)
+    user = db.query(User).first()
 
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A user is required before creating a calculation.",
         )
 
     try:
@@ -91,7 +90,7 @@ def add_calculation(
         ) from error
 
     calculation = Calculation(
-        user_id=user_id,
+        user_id=user.id,
         a=calculation_data.a,
         b=calculation_data.b,
         type=calculation_data.type.value,

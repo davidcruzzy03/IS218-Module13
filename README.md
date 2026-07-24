@@ -1,39 +1,18 @@
-# IS218 Module 11
+# Module 12 FastAPI Application
 
-## Description
+## Features
 
-This project implements a SQLAlchemy Calculation model, Pydantic
-validation schemas, a calculation factory, PostgreSQL integration
-tests, Docker, and a GitHub Actions CI/CD pipeline.
-
-## Supported Operations
-
-- Add
-- Sub
-- Multiply
-- Divide
-
-## Calculation Model
-
-The Calculation model stores:
-
-- id
-- user_id
-- a
-- b
-- type
-- result
-
-The result is calculated using the CalculationFactory and stored
-in PostgreSQL.
+- User registration
+- User login with hashed password verification
+- Calculation Browse, Read, Edit, Add, and Delete routes
+- Pydantic request and response validation
+- PostgreSQL persistence
+- Unit, integration, and end-to-end testing
+- Docker and GitHub Actions deployment
 
 ## Local Setup
 
 ```bash
-git clone git@github.com:davidcruzzy03/IS218-Module11.git
-cd IS218-Module11
-
-python3 -m venv venv
-source venv/bin/activate
-
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt

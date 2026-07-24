@@ -95,6 +95,6 @@ def login_user(
         )
 
     return LoginResponse(
-        message="Login successful.",
+        message="Login successful",
         user=UserRead.model_validate(user),
     )

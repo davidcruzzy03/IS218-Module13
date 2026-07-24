@@ -34,7 +34,6 @@ def engine():
     Base.metadata.drop_all(bind=test_engine)
     test_engine.dispose()
 
-
 @pytest.fixture()
 def db_session(engine):
     """Provide an isolated database session for each test."""
@@ -57,25 +56,6 @@ def db_session(engine):
         transaction.rollback()
         connection.close()
 
-
-@pytest.fixture()
-def client(db_session):
-    """Provide a FastAPI test client using the test database session."""
-
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    with TestClient(app) as test_client:
-        yield test_client
-
-    app.dependency_overrides.clear()
-
-
 @pytest.fixture()
 def test_user(db_session):
     """Create a database user for calculation tests."""
@@ -93,3 +73,21 @@ def test_user(db_session):
     db_session.refresh(user)
 
     return user
+
+
+@pytest.fixture()
+def client(db_session, test_user):
+    """Provide a FastAPI test client using the test database session."""
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    app.dependency_overrides.clear()

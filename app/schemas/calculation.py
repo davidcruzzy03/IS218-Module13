@@ -3,7 +3,13 @@
 from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class CalculationType(str, Enum):
@@ -15,12 +21,43 @@ class CalculationType(str, Enum):
     DIVIDE = "Divide"
 
 
+def normalize_type_value(value):
+    """Convert common operation names into CalculationType values."""
+
+    if isinstance(value, str):
+        normalized_types = {
+            "add": "Add",
+            "addition": "Add",
+            "sub": "Sub",
+            "subtract": "Sub",
+            "subtraction": "Sub",
+            "multiply": "Multiply",
+            "multiplication": "Multiply",
+            "divide": "Divide",
+            "division": "Divide",
+        }
+
+        return normalized_types.get(
+            value.strip().lower(),
+            value,
+        )
+
+    return value
+
+
 class CalculationCreate(BaseModel):
     """Validate data used to create a calculation."""
 
     a: float
     b: float
     type: CalculationType
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_calculation_type(cls, value):
+        """Normalize incoming calculation type values."""
+
+        return normalize_type_value(value)
 
     @model_validator(mode="after")
     def validate_operands(self) -> "CalculationCreate":
@@ -41,6 +78,13 @@ class CalculationUpdate(BaseModel):
     a: float
     b: float
     type: CalculationType
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_calculation_type(cls, value):
+        """Normalize incoming calculation type values."""
+
+        return normalize_type_value(value)
 
     @model_validator(mode="after")
     def validate_operands(self) -> "CalculationUpdate":
@@ -66,3 +110,19 @@ class CalculationRead(BaseModel):
     b: float
     type: CalculationType
     result: float
+
+    @field_serializer("type")
+    def serialize_calculation_type(
+        self,
+        calculation_type: CalculationType,
+    ) -> str:
+        """Return descriptive lowercase operation names in API JSON."""
+
+        response_names = {
+            CalculationType.ADD: "addition",
+            CalculationType.SUB: "subtraction",
+            CalculationType.MULTIPLY: "multiplication",
+            CalculationType.DIVIDE: "division",
+        }
+
+        return response_names[calculation_type]
