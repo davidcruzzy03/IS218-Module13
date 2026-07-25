@@ -43,25 +43,34 @@ def test_register_duplicate_user(client):
 
 
 def test_login_user(client):
+    user_data = {
+        "username": "loginuser",
+        "email": "login@example.com",
+        "password": "SecurePassword123",
+    }
+
     client.post(
         "/users/register",
-        json={
-            "username": "loginuser",
-            "email": "login@example.com",
-            "password": "SecurePassword123",
-        },
+        json=user_data,
     )
 
     response = client.post(
         "/users/login",
         json={
-            "username": "loginuser",
-            "password": "SecurePassword123",
+            "username": user_data["username"],
+            "password": user_data["password"],
         },
     )
 
     assert response.status_code == 200
-    assert response.json()["message"] == "Login successful"
+
+    data = response.json()
+
+    assert data["message"] == "Login successful"
+    assert data["token_type"] == "bearer"
+    assert isinstance(data["access_token"], str)
+    assert len(data["access_token"]) > 20
+    assert data["user"]["username"] == user_data["username"]
 
 
 def test_login_with_wrong_password(client):

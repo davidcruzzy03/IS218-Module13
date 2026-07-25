@@ -11,7 +11,11 @@ from app.schemas.user import (
     UserLogin,
     UserRead,
 )
-from app.security import hash_password, verify_password
+from app.security import (
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 
 
 router = APIRouter(
@@ -29,7 +33,7 @@ def register_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
 ) -> User:
-    """Register a new user with a securely hashed password."""
+    """Register a user with a securely hashed password."""
 
     existing_username = (
         db.query(User)
@@ -77,7 +81,7 @@ def login_user(
     login_data: UserLogin,
     db: Session = Depends(get_db),
 ) -> LoginResponse:
-    """Authenticate a user by username and password."""
+    """Authenticate a user and return a JWT access token."""
 
     user = (
         db.query(User)
@@ -92,9 +96,16 @@ def login_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+
+    access_token = create_access_token(
+        subject=user.username,
+    )
 
     return LoginResponse(
         message="Login successful",
+        access_token=access_token,
+        token_type="bearer",
         user=UserRead.model_validate(user),
     )

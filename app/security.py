@@ -1,24 +1,31 @@
-"""Security utilities for password hashing and verification."""
+"""Security utilities for passwords and JWT authentication."""
 
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-# Configure bcrypt as the password hashing algorithm
+
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto",
 )
 
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "development-secret-key-change-before-production",
+)
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+)
+
 
 def hash_password(password: str) -> str:
-    """
-    Hash a plain-text password.
+    """Hash a plain-text password."""
 
-    Args:
-        password: The user's plain-text password.
-
-    Returns:
-        A securely hashed password.
-    """
     return pwd_context.hash(password)
 
 
@@ -26,17 +33,46 @@ def verify_password(
     plain_password: str,
     hashed_password: str,
 ) -> bool:
-    """
-    Verify a plain-text password against its hash.
+    """Verify a plain-text password against its stored hash."""
 
-    Args:
-        plain_password: Password entered by the user.
-        hashed_password: Stored password hash.
-
-    Returns:
-        True if the password matches, otherwise False.
-    """
     return pwd_context.verify(
         plain_password,
         hashed_password,
     )
+
+
+def create_access_token(
+    subject: str,
+    expires_delta: timedelta | None = None,
+) -> str:
+    """Create a signed JWT access token."""
+
+    expiration = datetime.now(timezone.utc) + (
+        expires_delta
+        if expires_delta is not None
+        else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    payload: dict[str, Any] = {
+        "sub": subject,
+        "exp": expiration,
+    }
+
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    """Decode and validate a JWT access token."""
+
+    try:
+        return jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+        )
+    except JWTError as error:
+        raise ValueError("Invalid or expired access token.") from error

@@ -33,7 +33,7 @@ class UserLogin(BaseModel):
 
 
 class UserRead(BaseModel):
-    """Serialize a registered user without exposing the password hash."""
+    """Serialize a user without exposing the password hash."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -42,8 +42,16 @@ class UserRead(BaseModel):
     email: EmailStr
 
 
+class TokenData(BaseModel):
+    """Represent information stored inside a JWT."""
+
+    username: str | None = None
+
+
 class LoginResponse(BaseModel):
-    """Return a successful login response."""
+    """Return a successful login response with a JWT."""
 
     message: str
+    access_token: str
+    token_type: str
     user: UserRead
