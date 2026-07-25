@@ -1,8 +1,10 @@
+.venv/
 venv/
 __pycache__/
-.env
 *.pyc
-.DS_Store
+.env
+.pytest_cache/
 .coverage
-.pytest_cache
-htmlcov.env
+htmlcov/
+test-results/
+playwright-report/
