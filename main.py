@@ -6,16 +6,15 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
+from app.models.calculation import Calculation  # noqa: F401
+from app.models.user import User  # noqa: F401
 from app.operations import add, divide, multiply, subtract
 from app.routers.calculations import router as calculations_router
 from app.routers.users import router as users_router
-
-# Import the models so SQLAlchemy registers their tables.
-from app.models.calculation import Calculation  # noqa: F401
-from app.models.user import User  # noqa: F401
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,16 +22,24 @@ logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
-    title="Module 12 User and Calculation API",
+    title="Module 13 JWT Authentication Application",
     description=(
-        "FastAPI application providing user registration, login, "
-        "and calculation BREAD operations."
+        "FastAPI application providing JWT user registration, login, "
+        "frontend authentication pages, and calculation operations."
     ),
     version="1.0.0",
 )
 
 
-# Register Module 12 routers.
+# Make files inside the static directory available to the browser.
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static",
+)
+
+
+# Register application routers.
 app.include_router(users_router)
 app.include_router(calculations_router)
 
@@ -124,11 +131,33 @@ async def validation_exception_handler(
 
 @app.get("/")
 async def read_root(request: Request):
-    """Display the original calculator page."""
+    """Display the calculator page."""
 
     return templates.TemplateResponse(
         request=request,
         name="index.html",
+        context={},
+    )
+
+
+@app.get("/register")
+async def register_page(request: Request):
+    """Display the user registration page."""
+
+    return templates.TemplateResponse(
+        request=request,
+        name="register.html",
+        context={},
+    )
+
+
+@app.get("/login")
+async def login_page(request: Request):
+    """Display the user login page."""
+
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
         context={},
     )
 
@@ -153,6 +182,7 @@ async def add_route(
     try:
         result = add(operation.a, operation.b)
         return OperationResponse(result=result)
+
     except Exception as error:
         logger.error("Add operation error: %s", error)
 
@@ -175,6 +205,7 @@ async def subtract_route(
     try:
         result = subtract(operation.a, operation.b)
         return OperationResponse(result=result)
+
     except Exception as error:
         logger.error("Subtract operation error: %s", error)
 
@@ -197,6 +228,7 @@ async def multiply_route(
     try:
         result = multiply(operation.a, operation.b)
         return OperationResponse(result=result)
+
     except Exception as error:
         logger.error("Multiply operation error: %s", error)
 
