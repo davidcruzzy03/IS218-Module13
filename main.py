@@ -3,6 +3,7 @@
 import logging
 
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -10,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
+from app.database import Base, engine
 from app.models.calculation import Calculation  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.operations import add, divide, multiply, subtract
@@ -19,6 +21,14 @@ from app.routers.users import router as users_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Create missing database tables when the application starts."""
+
+    Base.metadata.create_all(bind=engine)
+    yield
 
 
 app = FastAPI(
